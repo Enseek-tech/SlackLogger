@@ -20,3 +20,5 @@ NOTION_PAGE_ID_0_GENERAL=148712765bdc81a19f8dd59e733a7a11
 ```
 # 注意事項
 - 事前に取得したいチャンネルに対応するNotionページを追加してそのIDを環境変数に入れる必要あり
+- 依存関係のインストールは以下のコマンドで
+`pip install -r requirements.txt`
