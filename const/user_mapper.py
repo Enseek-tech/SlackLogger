@@ -4,5 +4,4 @@ USER_MAPPER = {
     "U081MCFDYCR": "十川 渉",
     "U081PDJAZT3": "小野 聡",
     "U082B213VRS": "ログ保存BOT"
-
 }

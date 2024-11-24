@@ -1,7 +1,7 @@
 from apscheduler.schedulers.blocking import BlockingScheduler
 from utils.slack.slack_channel_utils import get_channel_list
 from utils.slack.slack_client import get_slack_logs
-from utils.notion.notion_utils import add_to_notion_weekly, add_to_notion_manually
+from utils.notion.notion_utils import add_to_notion
 import datetime
 
 def export_logs(export_function, description):
@@ -24,25 +24,13 @@ def export_logs(export_function, description):
 
     print(f"{description.capitalize()} export completed.")
 
-def weekly_export():
-    """
-    自動で毎週SlackログをNotionにエクスポートする。
-    """
-    export_logs(add_to_notion_weekly, "weekly")
-
-def run_manual_export():
-    """
-    手動で過去1週間のSlackメッセージを取得し、Notionのページに差分追加する。
-    """
-    export_logs(add_to_notion_manually, "manual")
-
 if __name__ == "__main__":
     import sys
 
     if len(sys.argv) > 1 and sys.argv[1] == "manual":
-        run_manual_export()
+        export_logs(add_to_notion, "manual")
     else:
         scheduler = BlockingScheduler()
-        scheduler.add_job(weekly_export, 'cron', day_of_week='sun', hour=0, minute=0)
+        scheduler.add_job(export_logs(add_to_notion, "weekly"), 'cron', day_of_week='sun', hour=0, minute=0)
         print("Scheduler started.")
         scheduler.start()

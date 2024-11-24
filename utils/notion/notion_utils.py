@@ -2,17 +2,13 @@ from notion_client import Client
 import os
 from dotenv import load_dotenv
 import datetime
-from slack_sdk import WebClient
-from slack_sdk.errors import SlackApiError
-
 from const.user_mapper import USER_MAPPER
 
 # 環境変数をロードします
 load_dotenv()
 
-# NotionとSlackのクライアントを初期化します
+# Notionクライアントを初期化します
 notion = Client(auth=os.getenv("NOTION_API_TOKEN"))
-slack_client = WebClient(token=os.getenv("SLACK_API_TOKEN"))
 
 def get_user_name(user_id):
     """
@@ -26,9 +22,11 @@ def fetch_existing_messages(page_id):
     """
     try:
         blocks = notion.blocks.children.list(block_id=page_id)["results"]
-        return {block["paragraph"]["rich_text"][0]["text"]["content"]
-                for block in blocks
-                if block["type"] == "paragraph" and block["paragraph"]["rich_text"]}
+        return {
+            block["paragraph"]["rich_text"][0]["text"]["content"]
+            for block in blocks
+            if block["type"] == "paragraph" and block["paragraph"]["rich_text"]
+        }
     except Exception as e:
         print(f"Error fetching existing messages from Notion: {e}")
         return set()
@@ -42,7 +40,7 @@ def format_message_content(message):
     user_id = message.get('user', 'Unknown User')
     text = message.get('text', '')
 
-    user_name = USER_MAPPER.get(user_id, f"Unknown User ({user_id})")
+    user_name = get_user_name(user_id)
     timestamp = datetime.datetime.fromtimestamp(float(ts)).strftime('%Y-%m-%d %H:%M:%S')
 
     return f"{timestamp} - {user_name}: {text}"
@@ -68,21 +66,20 @@ def add_messages_to_notion(messages, page_id, channel_name):
     existing_messages = fetch_existing_messages(page_id)
     print(f"Found {len(existing_messages)} existing messages in Notion.")
 
-    children = [
+    new_messages = [
         create_notion_block(format_message_content(message))
         for message in messages
         if format_message_content(message) not in existing_messages
     ]
 
-    if children:
+    if new_messages:
         try:
-            notion.blocks.children.append(block_id=page_id, children=children)
-            print(f"Added {len(children)} new messages to Notion page {channel_name}.")
+            notion.blocks.children.append(block_id=page_id, children=new_messages)
+            print(f"Added {len(new_messages)} new messages to Notion page {channel_name}.")
         except Exception as e:
             print(f"Error adding messages to Notion: {e}")
     else:
         print(f"No new messages to add for channel {channel_name}.")
-
 
 def add_to_notion(channel_name, logs):
     """
